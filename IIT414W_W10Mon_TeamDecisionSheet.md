@@ -57,7 +57,7 @@
 **Expected baseline performance vs docent floor:**
 - Grid-rule docent baseline: Brier = 0.208 on test
 - Calibrated docent model: Brier = 0.132 on test, ROC-AUC = 0.892
-- Our team's best baseline expected to land near: Brier = 0.145
+- Our team's best baseline expected to land near or lower: Brier = 0.129
 
 **LEAKAGE DECLARATION:**
 
