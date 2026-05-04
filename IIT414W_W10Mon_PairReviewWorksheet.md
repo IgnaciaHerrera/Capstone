@@ -3,8 +3,8 @@
 
 > **The point of this exchange is structured scrutiny, not feedback.** Polite reviews are useless. Your job for the next 14 minutes is to find the weakest decision in the partner team's framing and name it concretely. The team being reviewed commits the critique they received to GitHub at 16:00 — public artifact, no escape.
 
-**Reviewing team:** ____________________
-**Reviewed team:** ____________________
+**Reviewing team:** Group 5
+**Reviewed team:** Group 20
 
 ---
 
@@ -29,7 +29,7 @@ For each question, write a concrete answer based on what you read in the partner
 
 Concrete answer:
 
-> 
+> Their target `is_top10` perfectly matches their decision context. In Section 1, they defined their decision specifically as whether a driver will "score championship points (finish top-10)", which aligns directly with the target and their choice between an aggressive points-seeking strategy and a conservative setup-testing strategy.
 
 ---
 
@@ -39,7 +39,7 @@ Concrete answer:
 
 Concrete answer:
 
-> 
+> Yes, their baseline is highly F1-defendable. Predicting outcomes based solely on grid position and constructor tier perfectly reflects fundamental pre-race hierarchies that are universally understood in F1, meaning they can confidently justify the approach without risking test-set contamination.
 
 ---
 
@@ -49,7 +49,7 @@ Concrete answer:
 
 Concrete answer:
 
-> 
+> Their scenarios specify precise `constructor_tier` and `grid_position` values (P12 vs P8), making them runnable on paper. However, they are fundamentally flawed because they vary grid position instead of actual pit-stop strategies (e.g., `n_stops` or compound sequences). Grid position is not an actionable strategy choice.
 
 ---
 
@@ -59,7 +59,7 @@ Concrete answer:
 
 Concrete answer:
 
-> 
+> They missed ALL five limitations listed in the Capstone Brief. Instead, they invented generic ML limitations (class imbalance). Most critically, they skipped #4 (Strategy features are post-race observations) and #5 (Strategy choice is confounded), which directly affect how a Strategy Advisor should be interpreted.
 
 ---
 
@@ -69,7 +69,7 @@ Concrete answer:
 
 Concrete answer:
 
-> 
+> Their framing lacks a fallback story. In Section 6, Experiment 1 states "Success = achieve Brier <= 0.155". If the model lands at 0.20, they have no alternative hypothesis or defense prepared to explain why their model failed to beat the baseline.
 
 ---
 
@@ -79,7 +79,7 @@ After answering 3+ questions above, decide: which critique is the most important
 
 **Format:** "Your [section X] doesn't [specific issue]. The consequence is [what happens in Hito 1 or Demo Day]. One thing to do: [concrete action]."
 
-> 
+> Your Section 4 varies `grid_position` (P12 vs P8) for the what-if scenarios rather than actual race strategy variables like tire compounds or pit stops. The consequence is that your tool cannot provide actionable strategy recommendations during the race because grid position is not a choice, failing the core Capstone objective. One thing to do: Update your what-if scenarios to keep grid_position constant while varying strategy variables (e.g., a 1-stop M-H vs a 2-stop M-H-S). 
 
 **Example of a strong critique:** "Your Section 4 lists 'compare 1-stop vs 2-stop' but doesn't specify driver, circuit, or compound. The consequence is your Hito 1 won't have an executable what-if — Wednesday's TA can't help with that. One thing to do: pick three rows from the dataset (one driver, one circuit, three n_stops values) and write the specific scenarios in Section 4 before 15:40."
 
@@ -91,11 +91,11 @@ After answering 3+ questions above, decide: which critique is the most important
 
 What did you learn from reading their framing that informs your own?
 
-> 
+> Defining the decision window precisely (e.g., Friday evening after FP2) helps ground the analysis immensely, even if their specific feature execution was flawed.
 
 What is one thing they did better than you did?
 
-> 
+> Their justification for using Brier Score in Section 2 is extremely clear and perfectly ties calibration properties back to real-world strategist trust.
 
 ---
 
