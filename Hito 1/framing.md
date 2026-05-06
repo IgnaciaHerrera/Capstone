@@ -44,11 +44,11 @@
 ## 3. Baseline Plan
 
 **Baseline approach (one sentence):**
-> Calibrated logistic regression on grid_position + constructor_tier + driver_prior3_avg_finish + circuit_type, with Platt scaling applied on season 2022 calibration set.
+> Calibrated logistic regression on 8 pre-race features (grid_position, qualifying_position, driver_prior3_avg_finish, constructor_prior3_avg_finish, driver_circuit_prior_avg, avg_track_temp, avg_air_temp, round) with Isotonic calibration applied on season 2022 calibration set.
 
 **Why is this baseline F1-defendable?** (One sentence — could you justify it without ever seeing 2023–2024 data?)
 
-> In F1, grid position is the #1 predictor of race outcome; constructor tier determines car potential; recent driver form predicts consistency; and circuit type (street vs high-speed) affects which teams/drivers excel, all known before race day strategy is decided.
+> Grid and qualifying position reflect starting placement; prior 3-race driver/constructor averages capture recent momentum; circuit-specific driver history captures adaptation to different track types; temperature features encode track conditions affecting tire behavior—all observable before race-day strategy decisions are finalized.
 
 **Direction check:** higher baseline score means higher predicted P(top10). Yes / No / Explain.
 
@@ -57,7 +57,7 @@
 **Expected baseline performance vs docent floor:**
 - Grid-rule docent baseline: Brier = 0.208 on test
 - Calibrated docent model: Brier = 0.132 on test, ROC-AUC = 0.892
-- Our team's best baseline expected to land near or lower: Brier = 0.129
+- Our team's expected baseline with 8-feature model: Brier ≤ 0.135, ROC-AUC ≥ 0.870
 
 **LEAKAGE DECLARATION:**
 
@@ -102,14 +102,14 @@ Limitation #2 we acknowledge: Strategy choice is confounded with car pace, drive
 
 ## 6. Experiment Plan for Hito 1
 
-1. **Temporal validation and Brier score** on train/cal/test split: Retrain baseline logistic regression on 2019–2021, calibrate on 2022 with Platt scaling, evaluate on 2023–2024. Verify that model inputs (grid_position, constructor_tier, driver_prior3_avg_finish, circuit_type) are available for all rows.
-2. **Calibration curve and ECE (Expected Calibration Error)**: Plot reliability diagram on season 2023 hold-out to verify post-calibration miscalibration is reduced vs. raw logistic output. Ensure circuit_type is encoded (e.g., one-hot or numeric) so it's usable in the scenario framework.
-3. **What-if scenario comparison on Monza 2023 high-speed circuit**: Manually set n_stops and compound_sequence for actual Monza starters, filter by circuit_type='high_speed', and compare predicted P(is_top10) across 1-stop vs. 2-stop scenarios using the fitted baseline + Platt calibration
+1. **Temporal validation and Brier score** on train/cal/test split: Retrain baseline logistic regression on 2019–2021, calibrate on 2022 with Isotonic scaling, evaluate on 2023–2024. Verify that model inputs (grid_position, qualifying_position, driver_prior3_avg_finish, constructor_prior3_avg_finish, driver_circuit_prior_avg, avg_track_temp, avg_air_temp, round) are available for all rows.
+2. **Calibration curve and ECE (Expected Calibration Error)**: Plot reliability diagram on season 2023 hold-out to verify post-calibration miscalibration is reduced vs. raw logistic output. Isotonic calibration will be fitted on season 2022 and frozen before test-set evaluation.
+3. **What-if scenario comparison on Monza 2023 high-speed circuit**: Manually set n_stops and compound_sequence for actual Monza starters, filter by circuit_type='high_speed', and compare predicted P(is_top10) across 1-stop vs. 2-stop scenarios using the fitted baseline + Isotonic calibration
 
 **Hypothesis for each (one line each — what do we expect to happen and why?):**
 
-> 1. Brier score will drop from ~0.200 (raw) to ~0.145 (after Platt calibration) on 2023–2024 test set because grid_position and constructor_tier are stable pre-race signals with low variance across seasons, and circuit_type partitions races into learnable subgroups.
-> 2. Post-calibration ECE (Expected Calibration Error) will fall below 0.08 because Platt scaling fits a sigmoid directly to calibration set probabilities (season 2022), removing systematic over/under-confidence observed in raw logistic outputs.
+> 1. Brier score will drop from ~0.205 (raw logistic) to ~0.131 (after Isotonic calibration) on 2023–2024 test set because the 8-feature model captures complementary pre-race signals: grid/qualifying position (start placement), recent driver/constructor form (momentum), circuit-specific history (adaptation), and temperature (track conditions).
+> 2. Post-calibration ECE (Expected Calibration Error) will fall below 0.075 because Isotonic calibration fits a piecewise-linear mapping to observed frequencies in the season 2022 calibration set, removing systematic over/under-confidence more flexibly than Platt's sigmoid.
 > 3. For Monza 2023 (high-speed circuit), 1-stop strategies will show higher predicted P(is_top10) than 2-stop on average (ΔP ≈ +0.08 to +0.12) because shorter pit-time exposure and maintained tire grip in later stints favor fewer stops on fast circuits; however, confidence intervals will overlap by ~±0.06 due to confounding with driver skill and car setup (which historically co-vary with stop strategy choice).
 
 **Fallback Plan (If model does not beat baseline):**
