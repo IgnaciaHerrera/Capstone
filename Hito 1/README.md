@@ -53,6 +53,7 @@ This will install:
 - `matplotlib`, `seaborn` — Data visualization and calibration curves
 - `scikit-learn` — Machine learning models & metrics (Brier, ROC-AUC, calibration)
 - `scipy` — Statistical functions
+- `shap` — Feature importance & SHAP values for model interpretability
 - `ipykernel` — IPython kernel for Jupyter
 
 ---
