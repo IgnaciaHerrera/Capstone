@@ -102,7 +102,7 @@ Limitation #2 we acknowledge: Strategy choice is confounded with car pace, drive
 
 ## 6. Experiment Plan for Hito 1
 
-**T**Temporal validation and Brier score** on train/cal/test split: Retrain baseline logistic regression on 2019–2021, calibrate on 2022 with Platt scaling, evaluate on 2023–2024. Verify that model inputs (grid_position, constructor_tier, driver_prior3_avg_finish, circuit_type) are available for all rows.
+1. **Temporal validation and Brier score** on train/cal/test split: Retrain baseline logistic regression on 2019–2021, calibrate on 2022 with Platt scaling, evaluate on 2023–2024. Verify that model inputs (grid_position, constructor_tier, driver_prior3_avg_finish, circuit_type) are available for all rows.
 2. **Calibration curve and ECE (Expected Calibration Error)**: Plot reliability diagram on season 2023 hold-out to verify post-calibration miscalibration is reduced vs. raw logistic output. Ensure circuit_type is encoded (e.g., one-hot or numeric) so it's usable in the scenario framework.
 3. **What-if scenario comparison on Monza 2023 high-speed circuit**: Manually set n_stops and compound_sequence for actual Monza starters, filter by circuit_type='high_speed', and compare predicted P(is_top10) across 1-stop vs. 2-stop scenarios using the fitted baseline + Platt calibration
 
@@ -111,6 +111,10 @@ Limitation #2 we acknowledge: Strategy choice is confounded with car pace, drive
 > 1. Brier score will drop from ~0.200 (raw) to ~0.145 (after Platt calibration) on 2023–2024 test set because grid_position and constructor_tier are stable pre-race signals with low variance across seasons, and circuit_type partitions races into learnable subgroups.
 > 2. Post-calibration ECE (Expected Calibration Error) will fall below 0.08 because Platt scaling fits a sigmoid directly to calibration set probabilities (season 2022), removing systematic over/under-confidence observed in raw logistic outputs.
 > 3. For Monza 2023 (high-speed circuit), 1-stop strategies will show higher predicted P(is_top10) than 2-stop on average (ΔP ≈ +0.08 to +0.12) because shorter pit-time exposure and maintained tire grip in later stints favor fewer stops on fast circuits; however, confidence intervals will overlap by ~±0.06 due to confounding with driver skill and car setup (which historically co-vary with stop strategy choice).
+
+**Fallback Plan (If model does not beat baseline):**
+
+> If Brier ≥ 0.20 (fails to beat docent grid-rule baseline of 0.208): We will analyze residuals segmented by `circuit_type` and `strategy_type` (n_stops) to identify which circuit/strategy combinations the model misses most, and hypothesize whether the limiting factor is confounding (strategy choice biased by fast cars), insufficient feature engineering (missing tire compound predictiveness), or data coverage (insufficient 2023-2024 data for rare strategy patterns). This analysis will surface whether the model has learned meaningful strategy interactions or is simply replicating team pace, and will inform recommendations for Hito 2 (e.g., add team-fixed effects, boost sample size with international series data, or switch to ranking-based targets if calibration proves intractable).
 
 
 ---
@@ -121,13 +125,19 @@ Limitation #2 we acknowledge: Strategy choice is confounded with car pace, drive
 
 | Member | Owns | Branch / file in repo |
 |---|---|---|
-|  |  |  |
-|  |  |  |
-|  |  |  |
+| Ignacia | Data load + feature verification | hito1_baseline.ipynb |
+| Felipe | Baseline model + pipeline  | hito1_baseline.ipynb |
+| Martín | Calibration + what-if scenarios | hito1_baseline.ipynb |
+| Group 5 | Integration + cross-temporal validation | hito1_baseline.ipynb |
 
 **When does each member commit by?** (We need at least one commit per member per day Tue and Wed.)
 
-> 
+| Member | Wednesday Commit |
+|---|---|
+| Ignacia | 14:00 (data load complete + feature verification) |
+| Felipe | 14:30 (baseline model + pipeline tested) |
+| Martín | 15:00 (calibration + what-if scenarios executable) |
+| Group (Integration) | 15:30 (integration + cross-temporal validation complete) |
 
 ---
 
@@ -135,7 +145,7 @@ Limitation #2 we acknowledge: Strategy choice is confounded with car pace, drive
 
 > *Filled during Block 5 (15:45–16:05) after the partner team reviews this sheet.*
 
-**Reviewing team:** ____________________
+**Reviewing team:** Group 20
 
 **Concrete critique we received:**
 
