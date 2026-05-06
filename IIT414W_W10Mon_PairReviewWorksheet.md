@@ -59,7 +59,7 @@ Concrete answer:
 
 Concrete answer:
 
-> They missed ALL five limitations listed in the Capstone Brief. Instead, they invented generic ML limitations (class imbalance). Most critically, they skipped #4 (Strategy features are post-race observations) and #5 (Strategy choice is confounded), which directly affect how a Strategy Advisor should be interpreted.
+> Team missed five limitations listed in the Capstone Brief. Instead, they invented generic ML limitations (class imbalance). Most critically, they skipped #4 (Strategy features are post-race observations) and #5 (Strategy choice is confounded), which directly affect how a Strategy Advisor should be interpreted.
 
 ---
 
@@ -69,7 +69,7 @@ Concrete answer:
 
 Concrete answer:
 
-> Their framing lacks a fallback story. In Section 6, Experiment 1 states "Success = achieve Brier <= 0.155". If the model lands at 0.20, they have no alternative hypothesis or defense prepared to explain why their model failed to beat the baseline.
+> Team framing lacks a fallback story. In Section 6, Experiment 1 states "Success = achieve Brier <= 0.155". If the model lands at 0.20, they have no alternative hypothesis or defense prepared to explain why their model failed to beat the baseline.
 
 ---
 
@@ -81,9 +81,9 @@ After answering 3+ questions above, decide: which critique is the most important
 
 > Your Section 4 varies `grid_position` (P12 vs P8) for the what-if scenarios rather than actual race strategy variables like tire compounds or pit stops. The consequence is that your tool cannot provide actionable strategy recommendations during the race because grid position is not a choice, failing the core Capstone objective. One thing to do: Update your what-if scenarios to keep grid_position constant while varying strategy variables (e.g., a 1-stop M-H vs a 2-stop M-H-S). 
 
-**Example of a strong critique:** "Your Section 4 lists 'compare 1-stop vs 2-stop' but doesn't specify driver, circuit, or compound. The consequence is your Hito 1 won't have an executable what-if — Wednesday's TA can't help with that. One thing to do: pick three rows from the dataset (one driver, one circuit, three n_stops values) and write the specific scenarios in Section 4 before 15:40."
+Example of a strong critique: "Your Section 4 lists 'compare 1-stop vs 2-stop' but doesn't specify driver, circuit, or compound. The consequence is your Hito 1 won't have an executable what-if — Wednesday's TA can't help with that. One thing to do: pick three rows from the dataset (one driver, one circuit, three n_stops values) and write the specific scenarios in Section 4 before 15:40."
 
-**Example of a weak critique:** "Your framing is good but could be more specific in Section 4."
+Example of a weak critique: "Your framing is good but could be more specific in Section 4."
 
 ---
 
@@ -95,12 +95,12 @@ What did you learn from reading their framing that informs your own?
 
 What is one thing they did better than you did?
 
-> Their justification for using Brier Score in Section 2 is extremely clear and perfectly ties calibration properties back to real-world strategist trust.
+> Their justification for using Brier Score in Section 2 is  clear and perfectly ties calibration properties back to real strategist trust.
 
 ---
 
 ## After the Exchange
 
-The reviewed team writes the critique they received into their own `framing.md` Section 8 by 16:00. The reviewing team's worksheet is for their own records — keep it as a learning artifact.
+Team writes the critique they received into their own `framing.md` Section 8 by 16:00. The reviewing team's worksheet is for their own records — keep it as a learning artifact.
 
 Instructor records pair review participation in the session log. Pairs that visibly went through the questions vs pairs that just chatted will be visible from the artifact (the critique-received section).
