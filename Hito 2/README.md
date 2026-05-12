@@ -8,8 +8,8 @@ Hito 2 extends the baseline model to predict F1 race outcomes across two targets
 
 ### Dual-Target Design
 
-- **Primary Target (`is_top10`):** Binary classification for top-10 finishes. Calibrated via Platt scaling on 2022 data. Baseline: Brier 0.132, ROC-AUC 0.892 (instructor reference).
-- **Expansion Target (`is_top3`):** Binary classification for podium finishes. Calibrated via Platt scaling on 2022 data. Performance: Brier 0.079, ROC-AUC 0.921 (exceeds null baseline by 39.7%).
+- **Primary Target (`is_top10`):** Binary classification for top-10 finishes. Calibrated via Platt scaling on 2022 data. Performance: Brier 0.1364, ROC-AUC 0.8792 (docent reference: Brier 0.1320, ROC-AUC 0.8920).
+- **Expansion Target (`is_top3`):** Binary classification for podium finishes. Calibrated via Platt scaling on 2022 data. Performance: Brier 0.0768, ROC-AUC 0.9202 (exceeds null baseline by ~41.4%).
 
 Both targets use **identical feature sets and locked temporal split** (train 2019–2021, calibration 2022, test 2023–2024) to enable interpretable side-by-side comparison.
 
