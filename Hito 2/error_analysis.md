@@ -38,11 +38,11 @@ Users requesting 1-stop strategy evaluations should expect slightly lower model 
 
 ### Key Findings:
 
-1. **Permanent circuits (Monza, Spa, Silverstone, etc.) are strongest for top10:** ROC-AUC 0.894 for `is_top10`, Brier 0.129. These high-speed, high-pit-delta circuits have stable strategy outcomes with 579 test cases providing good model calibration.
+1. **Permanent circuits are strongest for top10:** ROC-AUC 0.894 for `is_top10`, Brier 0.129. These high-speed, high-pit-delta circuits have stable strategy outcomes with 579 test cases providing good model calibration.
 
-2. **Semi-street circuits (Australian, Canadian, Miami) show high `is_top3` ROC-AUC with caveats:** ROC-AUC 0.955 on only 118 test cases (smallest circuit-type sample). This high value should be interpreted with caution due to high variance at small sample size. The mix of permanent + public-road sections may create more predictable podium finishes, but the estimate is less stable than the permanent/street slices.
+2. **Semi-street circuits show high `is_top3` ROC-AUC with caveats:** ROC-AUC 0.955 on only 118 test cases (smallest circuit-type sample). This high value should be interpreted with caution due to high variance at small sample size. The mix of permanent + public-road sections may create more predictable podium finishes, but the estimate is less stable than the permanent/street slices.
 
-3. **Street circuits (Monaco, Singapore, Baku, Las Vegas):** Performance is solidly mid-range. ROC-AUC 0.881 for top10 (192 test cases), 0.921 for top3. Street circuits show competitive discrimination, not the weakness initially expected—this may reflect that the test set has more street circuits than the training distribution.
+3. **Street circuits:** Performance is solidly mid-range. ROC-AUC 0.881 for top10 (192 test cases), 0.921 for top3. Street circuits show competitive discrimination, not the weakness initially expected—this may reflect that the test set has more street circuits than the training distribution.
 
 ### Implication for Advisor:
 All circuit types show ROC-AUC > 0.80 for top10 and > 0.92 for top3. The model is reasonably robust across circuit types. Permanent circuits (n=579) are safest with most stable outcomes. Street circuits (n=192) perform well. Semi-street circuits (n=118) show high top3 ROC-AUC but with smaller sample size; treat as promising but less validated.
