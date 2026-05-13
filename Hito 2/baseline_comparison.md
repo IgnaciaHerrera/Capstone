@@ -9,8 +9,8 @@
 
 Both targets achieve **strong performance** relative to their respective baselines:
 
-- **`is_top10`**: Near parity with the docent reference (Brier 0.1364 vs 0.1320); trained on 8-feature CORRECTED_FEATURES set
-- **`is_top3`**: Comparable to grid-position-only baseline on Brier (0.0768 vs 0.0748), but outperforms on Log Loss and ROC-AUC (0.9202 vs 0.9099); excellent discrimination
+- **`is_top10`**: Near parity with the docent reference (Brier 0.1365 vs 0.1320); trained on 7-feature CORRECTED_FEATURES set
+- **`is_top3`**: Slightly higher Brier than grid-position-only baseline (0.0805 vs 0.0741), but outperforms on ROC-AUC (0.9084 vs 0.9065); excellent discrimination
 
 The expansion target `is_top3` demonstrates stronger discriminative power (ROC-AUC 0.9202) than the primary target, suggesting the model is well-calibrated for podium-or-not decisions.
 
@@ -36,9 +36,9 @@ We trained a logistic regression pipeline (with Isotonic calibration from Sectio
 
 | Metric | Our Value | vs Docent | Status |
 |---|---|---|---|
-| **Brier Score** | 0.1364 | +0.0044 ↑ | ✅ **Near parity** |
-| **ROC-AUC** | 0.8792 | −0.0128 ↓ | ✅ **Strong** |
-| **Log Loss** | 0.4417 | — | — |
+| **Brier Score** | 0.1365 | +0.0045 ↑ | ✅ **Near parity** |
+| **ROC-AUC** | 0.8798 | −0.0122 ↓ | ✅ **Strong** |
+| **Log Loss** | 0.5144 | — | — |
 | **Test Positive Rate** | 51.7% | — | — |
 
 ### Interpretation
@@ -66,9 +66,9 @@ For the expansion target `is_top3`, we define the baseline as a logistic regress
 
 | Metric | Grid-Only Baseline |
 |---|---|
-| Brier Score | 0.0748 |
-| ROC-AUC | 0.9099 |
-| Log Loss | 0.2595 |
+| Brier Score | 0.0741 |
+| ROC-AUC | 0.9065 |
+| Log Loss | 0.3894 |
 
 ### Our Hito 2 Model on `is_top3`
 
@@ -78,23 +78,23 @@ We trained the **same pipeline architecture** as `is_top10` (logistic regression
 
 | Metric | Our Value | vs Grid-Only | Status |
 |---|---|---|---|
-| **Brier Score** | 0.0768 | −0.0020 ↓ | ✅ **Comparable** |
-| **ROC-AUC** | 0.9202 | +0.0104 ↑ | ✅ **Better** |
-| **Log Loss** | 0.2486 | +0.0109 ↑ | ✅ **Better** |
+| **Brier Score** | 0.0805 | −0.0064 ↓ | ⚠️ **Slightly worse** |
+| **ROC-AUC** | 0.9084 | +0.0019 ↑ | ✅ **Better** |
+| **Log Loss** | 0.7677 | −0.3783 ↓ | ⚠️ **Worse** |
 | **Test Positive Rate** | 15.5% | — | ✅ **Well-calibrated** |
 
 ### Interpretation
 
-- Our `is_top3` model **matches or exceeds** the grid-position-only baseline across metrics:
-  - **Brier Score:** Our model (0.0768) is nearly identical to grid-only (0.0748), suggesting grid position dominates this metric.
-  - **ROC-AUC:** Our model (0.9202) exceeds grid-only (0.9099) by +0.0104, showing discrimination advantage from additional features.
-  - **Log Loss:** Our model (0.2486) improves on grid-only (0.2595) by +0.0109, indicating better calibrated probability estimates.
-- **Key insight:** While grid position is a strong feature for podium prediction, adding driver form, constructor tier, circuit history, and strategy inputs provides marginal but consistent improvements in discrimination and calibration.
-- The expansion target is **substantially more predictable** than the primary target, likely because:
-  - Podium finishes (top 3) correlate strongly with car performance, grid position, and strategic intensity
-  - Fewer confounding factors than top 10 (which includes midfield noise and tactical retirements)
-  - Both grid-only (ROC-AUC 0.9099) and CORRECTED_FEATURES (0.9202) achieve excellent discrimination
-- The modest gap between grid-only and CORRECTED_FEATURES for `is_top3` suggests that **grid position is the dominant pre-race signal for podium prediction**, but form, tier, and history still contribute value in probability calibration and ranking precision.
+- Our `is_top3` model shows **mixed results** compared to grid-position-only baseline:
+  - **Brier Score:** Our model (0.0805) is slightly worse than grid-only (0.0741) by −0.0064. This suggests that adding strategy features may introduce calibration noise for the podium-or-not decision, where grid position alone is a strong predictor.
+  - **ROC-AUC:** Our model (0.9084) marginally exceeds grid-only (0.9065) by +0.0019, showing only minimal discrimination advantage from additional features. Both models achieve excellent ROC-AUC > 0.90.
+  - **Log Loss:** Our model (0.7677) is significantly worse than grid-only (0.3894) by −0.3783. This large gap indicates that our probability calibration is weaker than the baseline, likely due to the added complexity of modeling strategy effects simultaneously.
+- **Key insight:** Grid position is an exceptionally strong single predictor for podium finishes. Adding driver form, constructor tier, circuit history, and strategy inputs does **not** substantially improve discrimination (ROC-AUC gain only +0.0019) and actually degrades probability calibration (Log Loss worse by 0.3783).
+- **Why CORRECTED_FEATURES underperforms on calibration for is_top3:**
+  - The strategy features (n_stops, compound_sequence) are less predictive of podium finishes than they are of top-10 finishes. Teams choose strategies based on pace and race situation, not podium expectation.
+  - For top-3 predictions, grid position + inherent car quality (captured indirectly via constructor tier and form) dominate. Strategy choice adds collinearity without improving predictive power.
+  - Isotonic calibration was fit on 2022 data; distribution shift and the smaller podium-positive class (15.5% vs 51.7% for top-10) make calibration less stable.
+- The expansion target is **more predictable at ranking than at probability calibration** — both models achieve excellent ROC-AUC (>0.90), suggesting the hard task is distinguishing podium drivers from non-podium drivers, not estimating calibrated probabilities.
 
 ---
 
@@ -104,11 +104,11 @@ We trained the **same pipeline architecture** as `is_top10` (logistic regression
 
 | Dimension | `is_top10` | `is_top3` | Interpretation |
 |---|---|---|---|
-| **Brier Score** | 0.1364 | 0.0768 | is_top3 is 43.7% better (lower Brier) |
-| **ROC-AUC** | 0.8792 | 0.9202 | is_top3 is more discriminative (+0.0410) |
-| **Log Loss** | 0.4417 | 0.2486 | is_top3 has better probability calibration |
-| **Positive Rate** | 51.7% | 15.5% | is_top3 is rare but precise |
-| **vs Baseline** | Near-parity vs Docent (0.1320/0.8920) | Outperforms grid-only (Brier ~0.0748; ROC-AUC 0.9099) | Both validated on CORRECTED_FEATURES |
+| **Brier Score** | 0.1365 | 0.0805 | is_top3 is 41% better (lower Brier), but weaker calibration than grid-only |
+| **ROC-AUC** | 0.8798 | 0.9084 | is_top3 is more discriminative (+0.0286) |
+| **Log Loss** | 0.5144 | 0.7677 | is_top10 has better calibration; is_top3 is worse than grid-only |
+| **Positive Rate** | 51.7% | 15.5% | is_top3 is rare and unbalanced; calibration harder |
+| **vs Baseline** | Near-parity vs Docent (0.1320/0.8920); outperforms grid-only | Matches grid-only on ROC-AUC but worse on calibration | CORRECTED_FEATURES effective for is_top10, mixed for is_top3 |
 
 ### What This Means for Strategy Decisions
 
@@ -126,6 +126,6 @@ We trained the **same pipeline architecture** as `is_top10` (logistic regression
 
 2. **is_top10 performance gap vs docent:** Our Brier (0.1364) is +0.0044 above the docent reference (0.1320), and ROC-AUC (0.8792) is −0.0128 below (0.8920). This reflects our CORRECTED_FEATURES approach (8 features: 6 pre-race + 2 strategy) vs the docent's likely larger feature set. The difference is within acceptable range. We verify this is not systematic leakage by running the leakage guard in Step 2 of the notebook.
 
-3. **is_top3 baseline choice:** We use a grid-position-only logistic regression as the baseline because it represents the most informative single-feature predictor available pre-race. This is a stronger and more meaningful comparison than a null (prevalence-based) predictor, and provides direct evidence that our feature engineering adds value. Step 3b of the notebook shows: CORRECTED_FEATURES achieves ROC-AUC 0.9202 vs grid-only 0.9099 (+0.0104 improvement), and Log Loss 0.2486 vs grid-only 0.2595 (+0.0109 improvement), demonstrating that driver form, constructor tier, circuit history, and strategy inputs each contribute value in probability calibration beyond grid position alone.
+3. **is_top3 baseline choice:** We use a grid-position-only logistic regression as the baseline because it represents the most informative single-feature predictor available pre-race. This is a stronger and more meaningful comparison than a null (prevalence-based) predictor, and provides direct evidence of whether our feature engineering improves or degrades predictions. Step 3b of the notebook shows: CORRECTED_FEATURES achieves ROC-AUC 0.9084 vs grid-only 0.9065 (+0.0019 improvement), but Log Loss 0.7677 vs grid-only 0.3894 (−0.3783 degradation). This mixed result suggests that while additional features marginally improve ranking discrimination (ROC-AUC), they degrade probability calibration, likely due to confounding between strategy choice and podium outcomes. Grid position dominates podium prediction; strategy features add noise for this specific target.
 
-4. **Feature set alignment:** Both models trained on identical CORRECTED_FEATURES (8 features) as defined in Section 0, ensuring fair within-model comparison for the dual-target what-if analysis in Step 4.
+4. **Feature set alignment:** Both models trained on identical CORRECTED_FEATURES (7 features: 5 pre-race + 2 strategy inputs) as defined in Section 0, ensuring fair within-model comparison for the dual-target what-if analysis in Step 4.
