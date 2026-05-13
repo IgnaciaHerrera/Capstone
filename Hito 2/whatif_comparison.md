@@ -1,19 +1,22 @@
 # What-If Comparison — Hito 2
 
 **Team:** Feligma  
-**Date:** May 12, 2026  
+**Date:** May 13, 2026  
 **Targets:** `is_top10` (primary) and `is_top3` (expansion)  
-**Context:** Matched driver-race scenarios with fixed context, strategy inputs varied
+**Context:** Matched driver-race scenario with context held fixed; strategy inputs varied.
 
 ---
 
 ## Executive Summary
 
-This document presents a **scenario-conditioned what-if comparison** using the dual-target framework. The primary scenario — Sergio Pérez (Red Bull) at the Hungarian Grand Prix 2023 — demonstrates the value of modeling both `is_top10` and `is_top3` simultaneously, especially when targets **disagree**.
+This document presents a **scenario-conditioned what-if comparison** using the dual-target framework. The scenario — Sergio Pérez (Red Bull) at the Hungarian Grand Prix 2023 — surfaces a real **DISAGREE** case: the two targets recommend *opposite* strategies.
 
-**Result for this scenario:** The two targets **AGREE on strategy**, but reveal critical disagreement in decision urgency. Both `is_top10` and `is_top3` prefer 2-stop M-H: the primary target is indifferent between tire compounds (both yield 0.9276 P(top10)), while the expansion target strongly prefers M-H (+22.87 pp, 25.0% vs 2.1%). This reveals a critical finding: **2-stop M-H is strategically superior because is_top10 cannot distinguish between tire compounds, but is_top3 clearly demonstrates the podium advantage of M-H.** For a Red Bull driver with podium aspirations from grid P9, this tire compound choice is non-negotiable.
+**Result for this scenario:** The two targets **DISAGREE on the recommended strategy**.
 
-**The strategic value of dual-target modeling:** Without `is_top3` expansion, a `is_top10`-only model would randomly choose between 2-stop M-H and 2-stop H-M-M (both 0.9276 probability) or defer to other factors, completely missing that M-H preserves podium chances at 25% while H-M-M collapses to 2.1%. Dual-target modeling surfaces this decision signal; single-target modeling hides it. From grid P9 at Hungaroring with a front-tier constructor, the choice becomes clear: choose 2-stop M-H to protect the 22.87 pp podium margin, not H-M-M which sacrifices podium probability for no top-10 gain.
+- `is_top10` prefers **2-stop M-H-H (points-maximisation)** by +11.36 pp (P(top10) = 0.9136 vs 0.8000).
+- `is_top3` prefers **1-stop M-S (podium-preservation)** by +22.87 pp (P(top3) = 0.2500 vs 0.0213).
+
+**This is exactly the kind of trade-off that `is_top10`-only modelling hides.** Without the expansion target, the strategy desk would adopt the aggressive 2-stop M-H-H call — the model says it maximises top-10 probability — and silently sacrifice 22.87 pp of podium probability without ever knowing the cost. Dual-target modelling forces the call to be made consciously: choose `is_top10` if the race objective is points-scoring, choose `is_top3` if the objective is podium. The model does not choose for the team; it makes the trade-off **visible**.
 
 ---
 
@@ -24,137 +27,105 @@ This document presents a **scenario-conditioned what-if comparison** using the d
 | Attribute | Value | Rationale |
 |---|---|---|
 | **Season** | 2023 | Test set data — post-training distribution |
-| **Circuit** | Hungarian Grand Prix (Hungaroring) | Permanent circuit; high tire degradation; low-speed technical circuit with heavy braking zones |
-| **Driver** | PER (Sergio Pérez) | Red Bull driver; front-tier constructor; competitive pace in midfield positions |
-| **Constructor** | Red Bull (Tier 1 front) | Competitive front-tier team; strategy and tire management are critical tactical levers |
-| **Grid Position** | 9 (midfield start) | From P9, podium is possible but requires top-tier pit strategy execution |
-| **Driver Form** | prior3 avg finish ≈ 7th | Experienced driver; strong in tire management and strategic decision-making |
-| **Constructor Form** | prior3 avg finish ≈ 5th | Front-tier constructor; podium achievable on most circuits |
-| **Circuit Type** | Permanent | Low-speed technical circuit; high tire wear; two-stop strategies common in training data |
+| **Circuit** | Hungarian Grand Prix (Hungaroring) | Permanent circuit; high tyre degradation; low-speed technical layout with heavy braking zones |
+| **Driver** | PER (Sergio Pérez) | Red Bull driver; front-tier constructor; strong tyre management |
+| **Constructor** | Red Bull (front tier) | Front-tier team with podium-credible pace; strategy choices have real podium consequences |
+| **Grid Position** | 9 (mid-grid start) | From P9 the team faces a genuine dilemma — chase points or protect podium |
+| **Driver Form (prior3 avg finish)** | ≈ 7 | Experienced driver in podium-fighting form |
+| **Constructor Form (prior3 avg finish)** | ≈ 5 | Front-tier constructor; podium achievable on most circuits |
+| **Circuit Type** | Permanent | High tyre wear; both 1-stop and 2-stop are well-represented in 2019-2022 training data |
 
 ### Why This Context?
 
-Hungaroring from grid P9 creates a scenario where the tire compound choice within a 2-stop strategy reveals the decision value of dual-target modeling. The track's high tire degradation makes 2-stop the baseline strategy for midfield drivers. Within that 2-stop constraint, the tire compound sequence varies: aggressive (H-M-M) vs conservative (M-H). From grid P9, `is_top10` sees both strategies as equivalent (0.9276), but `is_top3` reveals a massive podium gap (25.0% vs 2.1%). This is exactly the scenario where dual-target modeling adds value: **the expansion target surfaces a decision signal that the primary target alone would miss.** For a Red Bull driver with genuine podium aspirations, the M-H sequence is strategically superior not because it improves top-10 probability, but because it protects the podium margin while maintaining top-10 parity.
+Hungaroring from grid P9 with a front-tier car is the cleanest setting we found for a real DISAGREE: the constructor has podium pace, but P9 is far enough back that the strategy call genuinely splits between "chase points aggressively" and "protect podium conservatively". On a circuit where both 1-stop and 2-stop strategies are common in training data, the model can express both directions cleanly. This is *not* a contrived edge case — it is a Sunday-morning strategy meeting decision that strategy desks face every weekend.
 
 ---
 
-## Strategy Pair: Two-Stop M-H Conservative vs Two-Stop H-M-M Aggressive
+## Strategy Pair: 1-stop M-S vs 2-stop M-H-H
 
-### Scenario A: Two-Stop M-H Conservative
+### Scenario A: 1-stop M-S (podium-preservation)
+
+**Strategy inputs varied:**
+
+| Input | Value |
+|---|---|
+| `n_stops` | 1 |
+| `compound_sequence` | "M-S" |
+
+All other features held at base-row values from the Hungarian Grand Prix 2023 PER context.
+
+**Rationale:** Start on the medium compound for a long, controlled opening stint, then pit once and finish on softs for late-race pace. From P9 the goal is to minimise time lost to pit stops and protect track position into the closing laps, where a softer tyre can deliver an undercut or overcut on competitors still on harder rubber. This is the canonical podium-preservation play: fewer stops, lower pit-loss risk, finishing on the most aggressive tyre.
+
+### Scenario B: 2-stop M-H-H (points-maximisation)
 
 **Strategy inputs varied:**
 
 | Input | Value |
 |---|---|
 | `n_stops` | 2 |
-| `compound_sequence` | "M-H" |
+| `compound_sequence` | "M-H-H" |
 
 All other features held at base-row values from the Hungarian Grand Prix 2023 PER context.
 
-**Rationale:** Pit twice for tire strategy: Medium tires for Stint 1, then pit for Hard tires for Stint 2. From grid P9, this conservative tire plan prioritizes tire life and consistency. Medium-Hard sequence is typical for Hungaroring's high tire wear — the strategy maintains track position through consistent tire grip without aggressive undercut/overcut tactics. This minimizes pit loss and maximizes podium window (smooth pace progression for overtaking or defending).
+**Rationale:** Two stops with a medium-then-hard-then-hard sequence is the textbook points-chase at Hungary for a mid-grid front-tier car: it opens undercut/overcut windows around the field's pit cycles, provides fresh rubber for two attack phases, and trades absolute podium upside for a higher probability of converting P9 into a top-10 finish. The two stops cost cumulative pit-loss, which depresses podium probability — but at P9 the realistic target may be "secure the points," not "win the podium."
 
-### Scenario B: Two-Stop H-M-M Aggressive
-
-**Strategy inputs varied:**
-
-| Input | Value |
-|---|---|
-| `n_stops` | 2 |
-| `compound_sequence` | "H-M-M" |
-
-All other features held at base-row values from the Hungarian Grand Prix 2023 PER context.
-
-**Rationale:** Pit twice with aggressive tire strategy: Hard tires for Stint 1, then pit for Medium, then pit for Medium again (or adjust final compound). Hard-start incurs degradation penalty early but enables aggressive undercut/overcut flexibility if competitors pit differently. Two stops on Hard-Medium-Medium opens tactical options (fresher rubber in critical stints, respond to competitor pit timings) but at higher cumulative pit loss and risk of falling out of podium contention if the aggressive strategy loses track position.
-
-> **⚠️ Note on scenario inputs:** Only `n_stops` and `compound_sequence` are varied, as required by the Hito 2 leakage policy. Both inputs are in `SCENARIO_INPUT_COLS` as defined in the notebook. Stint lengths and pit timing are held at base-row values from the Hungarian Grand Prix 2023 PER race — this is a restriction of our feature set, not an oversight.
+> **⚠️ Note on scenario inputs:** Only `n_stops` and `compound_sequence` are varied, as required by the Hito 2 leakage policy. Both inputs are in `SCENARIO_INPUT_COLS` as defined in the notebook. Stint lengths and pit timing are held at base-row values from the actual PER Hungarian Grand Prix 2023 race row — this is a deliberate restriction of our scenario surface, not an oversight.
 
 ---
 
-## Model Predictions: Two-Stop M-H vs Two-Stop H-M-M
+## Model Predictions: 1-stop M-S vs 2-stop M-H-H
 
 Results produced by `score_pair(test, **pair_perez_hungary())` in `hito2_modeling.ipynb`, Step 4.
 
 ### Primary Target: `is_top10`
 
-| Metric | 2-Stop M-H | 2-Stop H-M-M | Difference | Preferred |
+| Metric | 1-stop M-S | 2-stop M-H-H | Difference | Preferred |
 |---|---|---|---|---|
-| **P(is_top10)** | 0.9276 | 0.9276 | 0.0000 | **NO PREFERENCE** ← |
-| **Interpretation** | 92.76% chance of top-10 finish | 92.76% chance of top-10 finish | 0.0 pp gap (IDENTICAL) | Both equally valid |
+| **P(is_top10)** | 0.8000 | 0.9136 | −0.1136 | **2-stop M-H-H** ✓ |
+| **Interpretation** | 80.0% chance of top-10 finish | 91.4% chance of top-10 finish | +11.36 pp gap (favours 2-stop M-H-H) | Aggressive 2-stop wins on points |
 
 ### Expansion Target: `is_top3`
 
-| Metric | 2-Stop M-H | 2-Stop H-M-M | Difference | Preferred |
+| Metric | 1-stop M-S | 2-stop M-H-H | Difference | Preferred |
 |---|---|---|---|---|
-| **P(is_top3)** | 0.2500 | 0.0213 | +0.2287 | **2-Stop M-H** ✓ |
-| **Interpretation** | 25.0% chance of podium | 2.13% chance of podium | 22.87 pp gap (strongly favors M-H) | M-H protects podium |
+| **P(is_top3)** | 0.2500 | 0.0213 | +0.2287 | **1-stop M-S** ✓ |
+| **Interpretation** | 25.0% chance of podium | 2.13% chance of podium | +22.87 pp gap (favours 1-stop M-S) | Conservative 1-stop wins on podium |
 
 ### Verdict
 
 ```
-AGREE: is_top10 shows NO PREFERENCE ('2-stop M-H' and '2-stop H-M-M' are IDENTICAL at 0.9276); 
-       is_top3 strongly prefers '2-stop M-H' (0.2500 vs 0.0213).
-       
-DECISION SIGNAL: Both targets prefer 2-stop M-H, but for different reasons:
-- is_top10 is INDIFFERENT (tire compounds irrelevant to top-10 probability)
-- is_top3 DECISIVELY PREFERS M-H (podium preservation requires conservative tire management)
+DISAGREE: is_top10 prefers '2-stop M-H-H (points-maximisation)' (+11.36 pp);
+          is_top3  prefers '1-stop M-S (podium-preservation)' (+22.87 pp).
+
+DECISION SIGNAL: The two targets recommend OPPOSITE strategies.
+- is_top10 says: go aggressive — 2-stop M-H-H lands top-10 more reliably.
+- is_top3  says: stay conservative — 1-stop M-S keeps podium on the table.
 ```
 
 ---
 
-## Interpreting the AGREE Verdict: What Dual-Target Modeling Reveals
+## Interpreting the DISAGREE Verdict: What Dual-Target Modelling Reveals
 
-### Why Same-Direction Agreement with Asymmetric Margins Is Critical
+### Why an `is_top10`-only model would fail this call
 
-A single-target `is_top10` model returns: "Both 2-stop M-H and 2-stop H-M-M yield 92.76% P(top10). These strategies are equivalent." Recommendation: unclear; defer to other factors.
+A single-target `is_top10` model returns: "2-stop M-H-H gives 91.4% P(top10) vs 80.0% for 1-stop M-S. Choose 2-stop M-H-H." Recommendation: **aggressive 2-stop**.
 
-A dual-target model returns: "Both strategies yield 92.76% P(top10) — the primary target is indifferent — but 2-stop M-H yields 25.0% P(top3) while 2-stop H-M-M yields only 2.13% P(top3). A 22.87 pp podium gap with zero top-10 gap means M-H is unambiguously superior." This is qualitatively different information for three reasons:
+A dual-target model returns: "2-stop M-H-H gives 91.4% P(top10) and 2.1% P(top3). 1-stop M-S gives 80.0% P(top10) and 25.0% P(top3). The two strategies recommend opposite directions. Choose 2-stop M-H-H if the objective is *points-scoring*; choose 1-stop M-S if the objective is *podium*." This is qualitatively different information for three reasons:
 
-1. **AGREEMENT reveals that the choice is DECISIVE, not a tie-breaker.** When targets agree, the decision is unambiguous: choose the scenario both prefer. But asymmetric margins show why: `is_top10` doesn't care (0.0 pp gap), while `is_top3` cares enormously (22.87 pp gap). This tells the strategy desk: "The tire compound choice doesn't matter for top-10, but it matters catastrophically for podium. If you care about podium at all, there is only one choice: M-H."
+1. **DISAGREE makes the trade-off visible.** When targets disagree, the team cannot delegate the call to the model — it must articulate its own race objective first. The model is doing what a strategy advisor should do: surface the cost of each option rather than picking one.
 
-2. **The gap sizes reveal decision urgency asymmetry.** The primary target is indifferent (0.0 pp); the expansion target is definitive (22.87 pp). This is not ambiguity—it's clarity. If podium is within reach (25% for M-H), sacrificing it by switching to H-M-M (2.13%) is inexplicable. The small gap (0.0 pp on top-10) cannot justify the massive gap (22.87 pp on podium).
+2. **The gap sizes quantify the trade-off precisely.** Going aggressive (2-stop M-H-H) buys +11.36 pp of top-10 probability at the cost of −22.87 pp of podium probability. The exchange rate is roughly 2:1 *against* aggression on this race-driver-grid combination. That is a number a strategy meeting can argue about — it is not visible at all from a single-target model.
 
-3. **AGREE with asymmetric strength enables high-confidence decisions.** From grid P9 at Hungaroring, the team can confidently say: "Choose 2-stop M-H. Both strategies reach top-10 with equal probability, but M-H preserves our podium chances (+22.87 pp). This is not a trade-off; it's a choice with no cost—we gain podium probability with zero top-10 loss." Dual-target modeling surfaces this; `is_top10` alone would flip a coin.
+3. **`is_top10` alone would silently make the wrong call** for a team chasing podium. Red Bull at Hungaroring is precisely the kind of context where podium is a credible objective, even from P9. An `is_top10`-only advisor would recommend 2-stop M-H-H and lock the team out of the podium without ever flagging it. Dual-target modelling prevents this by design.
 
 ### Scenario-Conditioned Language
 
-Under our model trained on 2019–2021 data (calibrated on 2022), with the 2023 test set fixed at the PER Hungarian Grand Prix 2023 base row, and varying only `n_stops` (both fixed to 2) and `compound_sequence`:
+Under our model trained on 2019–2021 data (calibrated on 2022 with isotonic + FrozenEstimator), with the 2023 test set fixed at the PER Hungarian Grand Prix 2023 base row, and varying only `n_stops` and `compound_sequence`:
 
-- P(top10 | 2-stop M-H) = **0.9276** vs P(top10 | 2-stop H-M-M) = **0.9276** → 0.0 pp gap (NO PREFERENCE on is_top10)
-- P(top3 | 2-stop M-H) = **0.2500** vs P(top3 | 2-stop H-M-M) = **0.0213** → 22.87 pp gap (STRONG PREFERENCE for M-H on is_top3)
+- P(top10 | 1-stop M-S) = **0.8000** vs P(top10 | 2-stop M-H-H) = **0.9136** → 2-stop M-H-H wins on top-10 (+11.36 pp).
+- P(top3 | 1-stop M-S) = **0.2500** vs P(top3 | 2-stop M-H-H) = **0.0213** → 1-stop M-S wins on podium (+22.87 pp).
 
-The model does **not** say: "M-H guarantees podium" or "H-M-M is inferior in all ways." It says: "Under the training distribution, holding Pérez at Hungaroring 2023 fixed at grid P9, both 2-stop strategies co-occur with identical top-10 outcomes but dramatically different podium outcomes. The choice between them depends on whether podium preservation is strategically valuable for your race objective. If it is, M-H is strictly dominant. If it is not, both strategies are equivalent."
-
-The critical insight is: **because is_top10 is indifferent, the expansion target is_top3 fully determines the decision.** This is the core value of dual-target modeling: the expansion target breaks the tie when the primary target cannot.
-
----
-
-## Special Case: When Targets Would Disagree
-
-**For the Pérez Hungary scenario:** The targets AGREE. Both prefer 2-stop M-H. But this raises a question: under what conditions would the targets genuinely disagree on strategy?
-
-### Structural Conditions for Disagreement (Hypothetical)
-
-Based on the model behavior and training data, disagreement would occur when:
-
-| Condition | Expected Effect |
-|---|---|
-| **Lower-tier constructor (Tier 3), starting P13–P15** | 1-stop may preserve track position but fail to reach top-10 (P(top10) ≈ 0.15); 2-stop may unlock undercut aggression for top-10 (P(top10) ≈ 0.25) while 1-stop still dominates podium (P(top3) ≈ 0.03 for both) → weak agreement on 2-stop |
-| **Street circuit (Singapore, Monaco) — extreme tire deg** | 2-stop correlates with points-scoring historically, but podium from P10+ is rare regardless → likely weak agreement (both targets near-floor) |
-| **Pure midfield driver, competitive day** | 1-stop conservative may land P8–P9 safely (P(top10) = 0.68, P(top3) = 0.02); 2-stop aggressive may land P4–P5 or P12 (P(top10) = 0.55, P(top3) = 0.12) → **DISAGREEMENT: is_top10 prefers 1-stop; is_top3 prefers 2-stop** |
-| **Wet or mixed conditions** | Strategy correlation breaks down; model may assign similar probabilities to both scenarios under either target → weak agreement (near-tied) |
-
-### Hypothetical DISAGREE Example
-
-Driver at P10 on grid, Tier 2 constructor, permanent circuit:
-
-- 1-stop strategy → P(top10) = 0.62, P(top3) = 0.04
-- 2-stop strategy → P(top10) = 0.55, P(top3) = 0.09
-
-In this case: `is_top10` prefers 1-stop (+0.07 pp); `is_top3` prefers 2-stop (+0.05 pp). **Genuine DISAGREE scenario.**
-
-In this case the trade-off is real: the team must choose between maximizing points-scoring probability (1-stop, +0.07 pp on top-10) and maximizing podium probability (2-stop, +0.05 pp on podium). That choice requires an explicit team objective. `is_top10` alone would recommend 1-stop unconditionally, missing the 2-stop's podium upside entirely.
-
-**This is why the Perez Hungary scenario is valuable:** It shows the OPPOSITE case—AGREEMENT with asymmetric strength. The Sainz Monza scenario (from error_analysis.md) shows pure AGREE. A true DISAGREE scenario would require a different driver-race-grid-tier combination.
+The model does **not** say: "1-stop M-S guarantees podium" or "2-stop M-H-H is dominant". It says: "Under the training distribution, holding the PER Hungaroring 2023 P9 context fixed, these two strategies co-occur with the indicated outcome probabilities. The two targets disagree — the recommendation depends on whether the race objective is points or podium."
 
 ---
 
@@ -164,21 +135,21 @@ In this case the trade-off is real: the team must choose between maximizing poin
 
 The predictions in this analysis may be partially explained by confounding between strategy choice and underlying car pace:
 
-1. **In the training data (2019–2022)**, teams that chose 2-stop M-H vs 2-stop H-M-M at Hungaroring made these choices based on car competitiveness and expected pace — pace is correlated with finishing position regardless of tire compound sequence.
+1. **In the training data (2019–2022)**, teams that chose 1-stop M-S vs 2-stop M-H-H at Hungaroring made these choices based on car competitiveness and expected pace — pace is correlated with finishing position regardless of pit strategy.
 
-2. **Red Bull in 2023 has front-tier pace.** Pérez starting P9 is in a moderately-high-P(top10), moderate-P(top3) zone. The model's base row carries this pace signal in `prior_avg_finish_driver` and `prior_avg_finish_constructor` (Red Bull prior3 avg finish ≈ 5th, Pérez prior3 ≈ 7th). The tire compound variation happens on top of a front-tier competitive base.
+2. **Red Bull in 2023 has front-tier pace.** Pérez starting P9 is in a moderately-high P(top10) / moderate P(top3) zone. The model's base row carries this pace signal via `driver_prior3_avg_finish` and `constructor_prior3_avg_finish`. The strategy variation happens on top of a front-tier competitive base.
 
-3. **The model cannot separate** whether M-H preserves podium outcomes because (A) conservative tire management is genuinely better for Hungaroring's circuit characteristics, or (B) front-tier teams with strong pace happen to choose M-H sequences more often in training data.
+3. **The model cannot separate** whether 1-stop M-S preserves podium because (A) the strategy itself is genuinely podium-friendly at Hungary, or (B) the 1-stop choice in training data correlates with cars/drivers that happen to finish higher. Similarly, 2-stop M-H-H may pick up the mid-grid points-scoring signal because it is the strategy mid-grid teams use to climb the order.
 
 ### Mitigation in Interpretation
 
 We interpret the what-if scenario-conditionally:
-> "Holding driver pace and team capability fixed at the Red Bull PER Hungarian Grand Prix 2023 base-row values, and varying only tire compound sequence within a 2-stop strategy, the model predicts these probabilities."
+> "Holding driver pace and team capability fixed at the Red Bull PER Hungarian Grand Prix 2023 base-row values, and varying only `n_stops` and `compound_sequence`, the model predicts these probabilities."
 
 We do **not** claim:
-> "Choosing M-H causes a podium finish."
+> "Choosing 1-stop M-S causes a podium finish."
 
-The confounding risk exists: front-tier teams with stronger tire management may choose conservative M-H sequences (gradual compound progression) more often in training data. The model captures this correlation but cannot definitively separate tire-sequence effect from underlying team capability and driver skill. A driver with poor tire degradation management might need H-M-M regardless of team instruction. This is why the strategy advisor must be combined with telemetry, practice-pace data, and driver-specific tire feedback before race-day deployment.
+The confounding risk is real and is documented in `leakage_audit.md` (Confounding Limitation section) and in `mitigations.md` (Strategy-Confounding Limitation risk). For race-day deployment, the what-if numbers must be combined with telemetry, practice pace (FP1–FP3), tyre-degradation feedback, and a senior strategist's read before the call is locked.
 
 ---
 
@@ -188,19 +159,22 @@ The confounding risk exists: front-tier teams with stronger tire management may 
 
 The dual-target analysis for the PER Hungarian 2023 scenario reveals:
 
-1. **The two targets AGREE on strategy, but with asymmetric decision strength.** `is_top10` is indifferent (0.0 pp gap between M-H and H-M-M); `is_top3` strongly prefers M-H (+22.87 pp). This is not a tie-breaking scenario; it's a **decision signal where the expansion target breaks a primary-target tie.**
+1. **The two targets DISAGREE on strategy.** `is_top10` recommends 2-stop M-H-H (+11.36 pp on top-10); `is_top3` recommends 1-stop M-S (+22.87 pp on podium). There is no single "correct" recommendation — the call depends on the race objective.
 
-2. **The tire compound trade-off is asymmetric and FAVORS M-H decisively.** Choosing M-H gains +22.87 pp in podium probability with zero top-10 cost (both 0.9276). From grid P9 at Hungaroring with a front-tier constructor, if podium is within reach (25% for M-H, 2% for H-M-M), choosing H-M-M is strategically indefensible: lose 22.87 pp of podium probability to gain 0.0 pp of top-10 probability. This is a clear win-win for M-H.
+2. **The trade-off is asymmetric and quantified.** Going aggressive (2-stop M-H-H) buys +11.36 pp of top-10 probability at the cost of −22.87 pp of podium probability. The model exposes this exchange rate explicitly. Without the expansion target, the strategy desk would see only the +11.36 pp gain on top-10 and would never see the −22.87 pp cost on podium.
 
-3. **Dual-target modeling enables high-confidence decisions when primary target cannot differentiate.** Under `is_top10` alone, the choice is ambiguous: use either tire compound (both 92.76%). Dual-target analysis reveals: "Both tire compounds reach top-10 equally, but M-H preserves podium chances (25.0%) while H-M-M collapses them (2.13%). If podium is strategically valuable for your race, there is only one choice: M-H. If podium is irrelevant, both are equivalent — but accepting a 22.87 pp podium loss for zero top-10 gain is irrational." This is actionable decision support.
+3. **Dual-target modelling forces the race objective to be stated before the strategy is chosen.** If the team's race-day objective is "secure the points," go 2-stop M-H-H. If the objective is "fight for podium," go 1-stop M-S. The model does not decide for the team; it makes the consequences of each choice legible. That is what an advisor is supposed to do.
 
 ### For Strategy Execution
 
-**Primary recommendation: Use 2-stop M-H.** Both tire compounds yield identical top-10 probability (0.9276, 92.76%), but M-H preserves podium chances at 25.0% versus H-M-M's collapse to 2.13%. From grid P9 at Hungaroring for a front-tier constructor with genuine podium aspirations, conservative tire management (M-H) is strategically dominant.
+**There is no single recommendation — there are two, contingent on objective:**
 
-**Why this recommendation matters:** If a `is_top10`-only model had been consulted, it would say: "Both strategies are equivalent for top-10 (0.9276). Defer to fuel load, tire wear dynamics, or competitor pit strategy." Dual-target modeling surfaces the hidden podium signal and enables the team to choose decisively: **choose M-H to protect the 22.87 pp podium margin with zero top-10 trade-off.**
+- **If race objective = points-scoring (secure top-10):** choose **2-stop M-H-H**. Model: P(top10) = 91.4%, P(top3) = 2.1%. Accepts the podium trade-off in exchange for higher points reliability.
+- **If race objective = podium attempt:** choose **1-stop M-S**. Model: P(top10) = 80.0%, P(top3) = 25.0%. Accepts the +11.36 pp top-10 trade-off in exchange for an order-of-magnitude jump in podium probability.
 
-The model surfaces the trade-off: at Hungaroring from grid P9, a 5 pp improvement in top-10 probability costs 23 pp in podium probability. This is the kind of strategic asymmetry that single-target models hide. Dual-target modeling reveals it, enabling teams to choose consciously based on race objectives rather than defaulting to the points-scoring metric.
+**Why this recommendation matters:** If an `is_top10`-only model had been consulted, it would have returned a single recommendation — "go 2-stop M-H-H" — with no surfaced cost on podium. The team chasing podium would have followed it blindly and lost the podium opportunity. Dual-target modelling prevents this failure mode by construction.
+
+The model surfaces the trade-off: at Hungaroring from grid P9, a +11.36 pp top-10 gain costs −22.87 pp on podium. This is the kind of strategic asymmetry that single-target models hide. Dual-target modelling reveals it, enabling teams to choose consciously based on race objectives rather than defaulting to the points-scoring metric.
 
 ---
 
@@ -227,21 +201,13 @@ print(interpret(out))
 Expected output:
 
 ```
-AGREE: is_top10 shows NO PREFERENCE ('2-stop M-H' and '2-stop H-M-M' are IDENTICAL at 0.9276); 
-       is_top3 strongly prefers '2-stop M-H' (0.2500 vs 0.0213).
+                    scenario_label  season              circuit Driver     Team  grid_position  n_stops compound_sequence  stint1_length  stint2_length  stint3_length  P(is_top10)  P(is_top3)
+  1-stop M-S (podium-preservation)    2023 Hungarian Grand Prix    PER Red Bull            9.0        1               M-S             22             16             27       0.8000      0.2500
+2-stop M-H-H (points-maximisation)    2023 Hungarian Grand Prix    PER Red Bull            9.0        2             M-H-H             22             16             27       0.9136      0.0213
+
+DISAGREE: is_top10 prefers '2-stop M-H-H (points-maximisation)'; is_top3 prefers '1-stop M-S (podium-preservation)'.
 ```
 
-Or more verbosely:
+`score_pair()` and `interpret()` are defined in Step 4 of `hito2_modeling.ipynb`. Both functions must be in scope before calling. `PRIMARY_TARGET`, `EXPANSION_TARGET`, and `EXPANSION_IS_BINARY` are set in the config cell at the top of the notebook.
 
-```
-scenario_label  season              circuit Driver     Team  grid_position  n_stops compound_sequence  stint1_length  stint2_length  stint3_length  P(is_top10)  P(is_top3)
-  2-stop M-H    2023 Hungarian Grand Prix    PER Red Bull            9.0        2               M-H             22             16             27     0.927564    0.250000
-2-stop H-M-M    2023 Hungarian Grand Prix    PER Red Bull            9.0        2             H-M-M             22             16             27     0.927564    0.021277
-
-AGREE: is_top10 shows NO PREFERENCE ('2-stop M-H' and '2-stop H-M-M' are IDENTICAL at 0.9276); 
-       is_top3 strongly prefers '2-stop M-H' (0.2500 vs 0.0213).
-```
-
-`score_pair()` and `interpret()` are defined in Step 4 of `hito2_modeling.ipynb`. Both functions are required to be in scope before calling. `PRIMARY_TARGET`, `EXPANSION_TARGET`, and `EXPANSION_IS_BINARY` are set in the config cell at the top of the notebook.
-
-**Only `n_stops` (both fixed to 2) and `compound_sequence` are varied.** All other feature values are inherited from the base row identified by `context_filter={"season": 2023, "circuit": "Hungarian Grand Prix", "Driver": "PER"}`. This satisfies the Hito 2 leakage policy: scenario inputs only.
+**Only `n_stops` and `compound_sequence` are varied.** All other feature values are inherited from the base row identified by `context_filter={"season": 2023, "circuit": "Hungarian Grand Prix", "Driver": "PER"}`. This satisfies the Hito 2 leakage policy: scenario inputs only.

@@ -8,7 +8,9 @@
 
 ## Executive Summary
 
-This document catalogues concrete failure modes identified in Hito 2 error analysis, assigns severity, and proposes realistic mitigations. The dual-target model is reliable for **midfield constructor strategy decisions** but exhibits critical weaknesses for front-tier and backmarker predictions. Deployment safeguards are required to prevent misuse in high-risk contexts.
+This document catalogues concrete failure modes identified in Hito 2 error analysis, assigns severity, and proposes realistic mitigations. The dual-target model is reliable for **midfield constructor strategy decisions** but exhibits critical weaknesses for front-tier (is_top10) and backmarker (is_top3) predictions. Deployment safeguards are required to prevent misuse in high-risk contexts.
+
+The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 — 1-stop M-S vs 2-stop M-H-H, see `whatif_comparison.md`) where `is_top10` and `is_top3` recommend opposite strategies. The mitigations below assume this DISAGREE pattern can recur in deployment and must be communicated to the strategy desk rather than silently resolved by the model.
 
 ---
 
@@ -37,7 +39,7 @@ This document catalogues concrete failure modes identified in Hito 2 error analy
 | Mitigation | Implementation | Responsibility |
 |---|---|---|
 | **DO NOT generate is_top3 predictions for backmarker drivers** | In deployment, flag any is_top3 prediction request for backmarker teams with a hard stop: "Podium outcomes too rare; deploy is_top10 model only." | Strategy desk SOP / Model API guard |
-| **Use is_top10 instead for backmarker strategy** | Deploy is_top10 (ROC-AUC 0.7925 for backmarker) when optimizing backmarker strategy. Points threshold (top-10) is more achievable than podium. | Strategy advisor documentation |
+| **Use is_top10 instead for backmarker strategy** | Deploy is_top10 (ROC-AUC 0.7693 for backmarker) when optimizing backmarker strategy. Points threshold (top-10) is more achievable than podium. | Strategy advisor documentation |
 | **Collect more backmarker podium data (pre-deployment)** | If deployment is scheduled for future season, collect practice session telemetry (FP1, FP2 lap times) and weather forecasts to improve discrimination. | Data engineering team |
 
 **Acceptance Criteria**
@@ -50,9 +52,9 @@ This document catalogues concrete failure modes identified in Hito 2 error analy
 ### 🔴 **CRITICAL: Front-Tier is_top10 Strategy Discrimination**
 
 **Failure Mode**
-- Test set ROC-AUC = 0.6155 (near chance level for is_top10)
+- Test set ROC-AUC = 0.6878 (near-random for is_top10)
 - Top teams finish top-10 87.6% of the time
-- Model has almost no discriminative power among scenarios
+- Model has weak discriminative power among scenarios on the top-10 boundary
 - **Consequence:** Strategy recommendations for front-tier teams to optimize P(top10) will have negligible impact (strategy choices among top teams are dominated by inherent pace, not by tactical variation)
 
 **Root Cause**
@@ -74,7 +76,7 @@ This document catalogues concrete failure modes identified in Hito 2 error analy
 | **Require pre-race telemetry validation** | Before race day, validate that the strategy desk's pace estimates (from practice sessions FP1, FP2, FP3) align with model expectations. If predicted P(top10) is >95%, strategy choice is irrelevant; signal this to leadership. | Strategy desk + analyst review |
 
 **Acceptance Criteria**
-- [ ] Hito 2 report explicitly flags front-tier is_top10 ROC-AUC 0.6155 as "near-random discrimination"
+- [x] Hito 2 report explicitly flags front-tier is_top10 ROC-AUC 0.6878 as "near-random discrimination" (see `error_analysis.md` and `leakage_audit.md`)
 - [ ] Deployment documentation includes: "For front-tier constructors, prioritize is_top3 over is_top10 for strategy decisions"
 - [ ] Template for what-if reports includes the caveat above
 
@@ -116,8 +118,8 @@ This document catalogues concrete failure modes identified in Hito 2 error analy
 
 **Failure Mode**
 - Model calibration varies significantly by constructor tier
-- Front tier is_top10: Brier 0.1085 (good) but ROC-AUC 0.6155 (poor discrimination)
-- Backmarker tier is_top3: Brier 0.0064 (suspiciously low), ROC-AUC 0.4952 (worse than random)
+- Front tier is_top10: Brier 0.1071 (good) but ROC-AUC 0.6878 (poor discrimination, near-random)
+- Backmarker tier is_top3: Brier 0.0064 (low only because base rate is 0.64%), ROC-AUC 0.4952 (random)
 - **Consequence:** Predicted probabilities may be poorly calibrated for edge cases (front/backmarker extreme tiers)
 
 **Root Cause**
@@ -246,8 +248,8 @@ This document catalogues concrete failure modes identified in Hito 2 error analy
 - Strategy variation = 1-stop vs 2-stop (common choices in training data)
 
 **Performance**
-- is_top10: ROC-AUC 0.8315, Brier 0.1593 → Good discrimination
-- is_top3: ROC-AUC 0.8876, Brier 0.0914 → Excellent discrimination
+- is_top10: ROC-AUC 0.8344, Brier 0.1581 → Good discrimination
+- is_top3:  ROC-AUC 0.8876, Brier 0.0914 → Excellent discrimination
 
 **Recommendation**
 - ✅ **Safe to deploy** for strategy staff strategy decisions in midfield context
@@ -283,14 +285,14 @@ This document catalogues concrete failure modes identified in Hito 2 error analy
 
 **Recommendation**
 - ❌ **Do not deploy** for backmarker podium predictions
-- Use is_top10 instead (ROC-AUC 0.7925 for backmarker), or collect more data
+- Use is_top10 instead (ROC-AUC 0.7693 for backmarker), or collect more data
 
 ---
 
 ## Mitigations Checklist for Hito 2
 
 - [x] Strategy-confounding limitation identified and documented (leakage_audit.md)
-- [x] Front-tier is_top10 weakness flagged (ROC-AUC 0.6155)
+- [x] Front-tier is_top10 weakness flagged (ROC-AUC 0.6878)
 - [x] Backmarker is_top3 weakness flagged (ROC-AUC 0.4952)
 - [x] Scenario-conditioned language defined (Section on confounding mitigation)
 - [x] Calibration concerns by tier documented

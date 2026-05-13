@@ -8,10 +8,10 @@ Hito 2 extends the baseline model to predict F1 race outcomes across two targets
 
 ### Dual-Target Design
 
-- **Primary Target (`is_top10`):** Binary classification for top-10 finishes. Calibrated via Platt scaling on 2022 data. Performance: Brier 0.1365, ROC-AUC 0.8798 (docent reference: Brier 0.1320, ROC-AUC 0.8920).
-- **Expansion Target (`is_top3`):** Binary classification for podium finishes. Calibrated via Platt scaling on 2022 data. Performance: Brier 0.0805, ROC-AUC 0.9084 (exceeds null baseline by ~39.2%).
+- **Primary Target (`is_top10`):** Binary classification for top-10 finishes. Calibrated via Isotonic regression on 2022 data using `FrozenEstimator`. Performance: Brier 0.1374, ROC-AUC 0.8805 (docent reference: Brier 0.1320, ROC-AUC 0.8920).
+- **Expansion Target (`is_top3`):** Binary classification for podium finishes. Calibrated via Isotonic regression on 2022 data using `FrozenEstimator`. Performance: Brier 0.0805, ROC-AUC 0.9084 (grid-only baseline: Brier 0.0741, ROC-AUC 0.9065).
 
-Both targets use **identical feature sets and locked temporal split** (train 2019–2021, calibration 2022, test 2023–2024) to enable interpretable side-by-side comparison.
+Both targets use **identical feature sets (7 features: 5 pre-race + 2 strategy inputs), identical pipeline architecture, and locked temporal split** (train 2019–2021, calibration 2022, test 2023–2024) to enable interpretable side-by-side comparison and a fair what-if analysis. The what-if comparison in `whatif_comparison.md` surfaces a real DISAGREE scenario (Pérez Hungary 2023) where the two targets recommend opposite strategies.
 
 ---
 
@@ -19,11 +19,11 @@ Both targets use **identical feature sets and locked temporal split** (train 201
 
 This project requires the F1 race-level dataset:
 
-**File:** `f1_strategy_race_level.csv` 
+**File:** `f1_strategy_race_level.csv`
 
-The notebook loads this file from `../Hito 2/f1_strategy_race_level.csv`. If you receive a path error:
-1. Verify the CSV exists in `Capstone/Hito 2/`
-2. Update `DATA_PATH` in the config cell of `hito2_modeling.ipynb` if your directory structure differs
+The notebook loads this file from the same folder as the notebook (`DATA_PATH = "f1_strategy_race_level.csv"`). If you receive a path error:
+1. Verify the CSV exists in `Capstone/Hito 2/` alongside `hito2_modeling.ipynb`.
+2. Update `DATA_PATH` in the config cell of `hito2_modeling.ipynb` if your directory structure differs.
 
 ---
 
