@@ -97,6 +97,75 @@ Used – The SHAP waterfall plots are included in Section 9 and provide meaningf
 
 
 
+Interaction 5: 
+** Context **
+We were building a baseline logistic regression model to predict top‑10 finishes. The dataset contained 47 columns, many of which were only known after the race (e.g., number of pit stops, stint lengths, finishing position). To avoid data leakage, we needed to separate pre‑race (safe) from post‑race (leakage) features. We also wanted to start with a small set of numeric features that would be easy to interpret and standardize.
+
+** Prompt(s) ** :
+
+“We have a dataset with 47 columns: season, round, race_name, circuit_id, driver_id, grid_position, qualifying_position, n_stops, stint_lengths, finish_position, points, is_top10, dnf, safety_car_periods, wet_laps, etc. Help me categorise them into pre‑race (available before the race) and post‑race (only known after). Also, suggest 8 numeric pre‑race features for a simple logistic regression baseline.”
+
+** Relevant Output ** :
+The assistant listed 25 post‑race leakage features: n_stops, compound_sequence, stint_lengths, stint1_length…, finish_position, points, positions_gained, is_top3, is_top5, is_top10, dnf, status, wet_laps, track_status_summary, safety_car_periods, etc.
+It then proposed 8 pre‑race numeric features: grid_position, driver_prior3_avg_finish, constructor_prior3_avg_finish, driver_circuit_prior_avg, qualifying_position, avg_track_temp, avg_air_temp, round.
+It recommended using StandardScaler and a logistic regression with C=0.001 to avoid overfitting, and noted that all 8 features had no missing values.
+
+** Validation ** :
+We manually verified that none of the post‑race features were present in the training set (the split was temporal: 2019‑2021 train, 2022 calibration, 2023‑2024 test). We also confirmed that the 8 selected features were indeed available before the race and had no nulls. The coefficient signs of the trained model were as expected (negative for grid_position and driver_prior3_avg_finish, meaning worse starting position or worse form decreases the probability of top‑10).
+
+** Adaptations ** :
+We kept the 8 features as the baseline set. We did not include the suggested Circuit type or other categorical variables in the first iteration to keep the model simple. We also added a step to check for data leakage by ensuring that features like n_stops were not used in training.
+
+** Final Decision ** : 
+Used – The 8‑feature set with StandardScaler and logistic regression (C=0.001) became our baseline winner model. The classification of leakage features was documented in the notebook and used to avoid any temporal contamination.
+
+
+
+
+
+
+
+
+Prompt 4: Model Calibration & Brier Score Improvement
+
+
+2. Date
+2025-04-12
+
+3. User Question / Instruction
+“The uncalibrated logistic regression gives raw probabilities that are too extreme (range 0.25‑0.80) and the calibration curve shows systematic bias. We have a separate calibration set (season 2022). Should we use Platt scaling or isotonic regression? Which one is more appropriate for our F1 top‑10 prediction task? And how much improvement in Brier score can we expect?”
+
+4. AI Response Summary
+
+Explained that Platt scaling (sigmoid) works well when the model’s miscalibration is simple (log‑odds linear), while isotonic regression is non‑parametric and more flexible.
+
+Recommended isotonic calibration because the initial calibration curve showed a distinct “s‑shape” that Platt might not capture well.
+
+Predicted a Brier score drop from ~0.174 (raw) to ~0.132‑0.135 after isotonic calibration, based on typical behaviour of logistic regression on sports data.
+
+Warned about overfitting the calibration set if the model is very flexible, but noted that CalibratedClassifierCV(cv=’prefit’) with a separate fixed calibration set would be safe.
+
+5. Reflection / Honest Assessment
+Isotonic calibration indeed reduced Brier from 0.1741 to 0.1318, beating the docent baseline (0.132). The improvement was better than the AI’s upper bound (0.135). However, the AI did not highlight that isotonic calibration can cause probability “steps” that are less intuitive for strategy decision‑making. In practice, the strategy team might prefer a smoother Platt curve even if the Brier is slightly higher. We should present both options in the final visualisations.
+
+6. Next Actions / Changes Made
+
+Implemented CalibratedClassifierCV(method=’isotonic’, cv=None) on the 2022 calibration set.
+
+Computed Expected Calibration Error (ECE): raw = 0.1769 → calibrated = 0.0503.
+
+Compared Brier and ROC‑AUC on the 2023‑2024 test set.
+
+Added a note in the final summary that isotonic is our winner, but Platt could be offered as an alternative for interpretability.
+
+Planned to include calibration curves in the notebook for both methods (only isotonic shown in final, but we can add Platt later).
+
+
+
+
+
+
+
 
 ### Errors
 

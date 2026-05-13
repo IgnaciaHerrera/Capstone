@@ -16,7 +16,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ## Risk Register
 
-### 🔴 **CRITICAL: Backmarker Podium Predictions (is_top3)**
+###  **CRITICAL: Backmarker Podium Predictions (is_top3)**
 
 **Failure Mode**
 - Test set ROC-AUC = 0.4952 (worse than random chance)
@@ -49,7 +49,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ---
 
-### 🔴 **CRITICAL: Front-Tier is_top10 Strategy Discrimination**
+###  **CRITICAL: Front-Tier is_top10 Strategy Discrimination**
 
 **Failure Mode**
 - Test set ROC-AUC = 0.6878 (near-random for is_top10)
@@ -82,7 +82,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ---
 
-### 🟡 **HIGH: Strategy-Confounding Limitation (Both Targets)**
+### **HIGH: Strategy-Confounding Limitation (Both Targets)**
 
 **Failure Mode**
 - Strategy choice in training data (2019–2022) is not independent of car pace, driver ability, weather
@@ -114,7 +114,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ---
 
-### 🟡 **HIGH: Calibration Degradation by Constructor Tier**
+###  **HIGH: Calibration Degradation by Constructor Tier**
 
 **Failure Mode**
 - Model calibration varies significantly by constructor tier
@@ -145,7 +145,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ---
 
-### 🟠 **MEDIUM: Feature Leakage Risk from Scenario Inputs**
+###  **MEDIUM: Feature Leakage Risk from Scenario Inputs**
 
 **Failure Mode**
 - `n_stops` and `compound_sequence` are classified as "scenario inputs" (user-varied for what-if)
@@ -176,7 +176,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ---
 
-### 🟠 **MEDIUM: Limited Predictive Horizon**
+###  **MEDIUM: Limited Predictive Horizon**
 
 **Failure Mode**
 - Model is trained on 2019–2021 (train) and calibrated on 2022 (calib), tested on 2023–2024
@@ -207,7 +207,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ---
 
-### 🟢 **LOW: Data Sparsity in Edge Cases**
+###  **LOW: Data Sparsity in Edge Cases**
 
 **Failure Mode**
 - Certain combinations of (constructor_tier, n_stops, circuit_type) are rare in training data
@@ -239,7 +239,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 
 ## Summary: Where Is This Model Reliable?
 
-### ✅ **GREEN ZONE: Midfield Constructor Strategy Decisions**
+###  **GREEN ZONE: Midfield Constructor Strategy Decisions**
 
 **Profile**
 - Constructor tier = midfield (e.g., Alpine, Aston Martin in typical seasons)
@@ -252,12 +252,12 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 - is_top3:  ROC-AUC 0.8876, Brier 0.0914 → Excellent discrimination
 
 **Recommendation**
-- ✅ **Safe to deploy** for strategy staff strategy decisions in midfield context
+-  **Safe to deploy** for strategy staff strategy decisions in midfield context
 - Requires: scenario-conditioned language, subject-matter expert review, monitoring
 
 ---
 
-### ⚠️ **YELLOW ZONE: Front-Tier Podium Optimization (is_top3)**
+###  **YELLOW ZONE: Front-Tier Podium Optimization (is_top3)**
 
 **Profile**
 - Constructor tier = front
@@ -268,13 +268,13 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 - is_top3: ROC-AUC 0.7872, Brier 0.1901 → Moderate-good discrimination
 
 **Recommendation**
-- ⚠️ **Deploy with caution** for front-tier podium strategy
+-  **Deploy with caution** for front-tier podium strategy
 - Requires: explicit caveat that is_top10 discrimination is poor (teams finish top-10 too often)
 - Requires: pre-race telemetry validation (FP3 pace estimates)
 
 ---
 
-### 🔴 **RED ZONE: Do Not Deploy**
+###  **RED ZONE: Do Not Deploy**
 
 **Backmarker is_top3 (Podium)**
 - Constructor tier = backmarker
@@ -284,7 +284,7 @@ The model also exposes a concrete **DISAGREE scenario** (Pérez Hungary 2023 —
 - ROC-AUC 0.4952 (worse than random), Brier 0.0064 (unreliable)
 
 **Recommendation**
-- ❌ **Do not deploy** for backmarker podium predictions
+-  **Do not deploy** for backmarker podium predictions
 - Use is_top10 instead (ROC-AUC 0.7693 for backmarker), or collect more data
 
 ---
