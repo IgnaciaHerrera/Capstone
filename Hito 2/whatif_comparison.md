@@ -18,6 +18,8 @@ This document presents a **scenario-conditioned what-if comparison** using the d
 
 **This is exactly the kind of trade-off that `is_top10`-only modelling hides.** Without the expansion target, the strategy desk would adopt the aggressive 2-stop M-H-H call — the model says it maximises top-10 probability — and silently sacrifice 22.87 pp of podium probability without ever knowing the cost. Dual-target modelling forces the call to be made consciously: choose `is_top10` if the race objective is points-scoring, choose `is_top3` if the objective is podium. The model does not choose for the team; it makes the trade-off **visible**.
 
+⚠️ **Calibration caveat:** the `is_top3` model (Brier 0.0805) does not beat the grid-position-only baseline (Brier 0.0741, delta = −0.0064). This means the `is_top3` probabilities primarily reflect car pace (captured by grid position) rather than an isolated strategy effect. The DISAGREE result is real and directionally valid, but the absolute P(top3) values should not be treated as precise strategy estimates. See the Validation Probe section below.
+
 ---
 
 ## Scenario: Sergio Pérez — Hungarian Grand Prix 2023
@@ -129,6 +131,42 @@ The model does **not** say: "1-stop M-S guarantees podium" or "2-stop M-H-H is d
 
 ---
 
+## Why the Two Models Mechanically Disagree
+
+The DISAGREE result is not noise — it is a structural consequence of the asymmetric class distributions between the two targets.
+
+**Class distributions on the test set (2023–2024):**
+
+- `is_top10` positive rate = **0.517** (near-balanced; roughly 1 in 2 races end in a top-10 finish).
+- `is_top3` positive rate = **0.155** (strongly imbalanced; roughly 1 in 6 races end in a podium).
+
+**Effect of `class_weight="balanced"` in LogisticRegression:**
+
+Both models are trained with `class_weight="balanced"`, which sets per-sample weights to the inverse of the class frequency. For `is_top10` at 0.517, the weights are nearly equal and the model behaves like an unweighted classifier. For `is_top3` at 0.155, the minority (podium) class is upweighted by approximately `(1 − 0.155) / 0.155 ≈ 5.45×`, making the `is_top3` model disproportionately sensitive to any feature pattern that correlates with podium outcomes in the 2019–2021 training data.
+
+**Why this produces DISAGREE at Hungaroring:**
+
+In the training period (2019–2021), Hungaroring is dominated by front-tier constructors (Red Bull, Mercedes) running tyre-preservation strategies — frequently 1-stop. The `is_top3` model, heavily upweighting the minority podium class, learns this correlation strongly: 1-stop strategies appear alongside top-3 finishes far more often than 2-stop strategies do at Hungary. When the `is_top3` model evaluates the 2-stop M-H-H scenario, it assigns a pattern associated with mid-pack order-climbing cars, and collapses `P(top3)` to 0.0213.
+
+The `is_top10` model does not need to amplify this signal. Operating on a near-balanced target, it sees both 1-stop and 2-stop outcomes at similar frequencies and weights the undercut/overcut advantage of the 2-stop more, pushing `P(top10 | 2-stop M-H-H)` to 0.9136.
+
+**The disagreement is mechanically inevitable given the class asymmetry — it is not noise.**
+
+---
+
+## Validation Probe — is_top3 Pace vs Strategy Signal
+
+| Metric | Value |
+|---|---|
+| `is_top3` model Brier (7 features) | 0.0805 |
+| `is_top3` grid-only baseline Brier | 0.0741 |
+| Delta (baseline − model) | −0.0064 |
+| Probe result | ⚠️ FLAGGED — model does not beat baseline |
+
+Because delta < 0, the `is_top3` model adds no predictive value beyond grid position alone. The mitigation is: treat the P(top3) what-if outputs as directional (1-stop preserves podium better than 2-stop) but do not use the absolute values (25.0% vs 2.1%) as calibrated probability estimates. The recommended threshold for a "strategy-informative" `is_top3` model is delta ≥ 0.005 (i.e., model must beat baseline by at least 0.005 Brier). This threshold is not met.
+
+---
+
 ## Limitations & Confounding
 
 ### Strategy Confounding at Hungaroring
@@ -143,8 +181,7 @@ The predictions in this analysis may be partially explained by confounding betwe
 
 ### Mitigation in Interpretation
 
-We interpret the what-if scenario-conditionally:
-> "Holding driver pace and team capability fixed at the Red Bull PER Hungarian Grand Prix 2023 base-row values, and varying only `n_stops` and `compound_sequence`, the model predicts these probabilities."
+We interpret the what-if scenario-conditionally AND with a calibration caveat: the `is_top3` model Brier (0.0805) exceeds the grid-only baseline (0.0741), meaning the model's P(top3) outputs are pace-informed, not strategy-isolated. The direction of the DISAGREE (1-stop M-S preserves podium probability) is robust, but the magnitudes (P(top3) = 25.0% vs 2.1%) should be treated as approximate bounds, not precise forecasts. A model that beats the grid-only baseline by ≥ 0.005 Brier would be required before making absolute probability claims.
 
 We do **not** claim:
 > "Choosing 1-stop M-S causes a podium finish."
